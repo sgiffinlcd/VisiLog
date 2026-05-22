@@ -1,3 +1,4 @@
+using VisiLog.Web.Blazor.WASM;
 using VisiLog.Web.Blazor.WASM.Client.Pages;
 using VisiLog.Web.Blazor.WASM.Components;
 
@@ -9,6 +10,10 @@ builder.Services.AddRazorComponents()
 
 // Using OpenAPI
 builder.Services.AddOpenApi();
+
+// Dependency injection loading for the library and any child libraries that are subscribed to by this library. This is for the trunk library to load dependency injection for itself and any child libraries that are subscribed to by this library. Leaf to trunk load order.
+var loader = new Loader();
+loader.Load(builder.Services, builder.Configuration);
 
 var app = builder.Build();
 
