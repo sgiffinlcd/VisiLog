@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeFactory.NDF" Version="10.26141.1" />
+    <PackageReference Include="CodeFactory.NDF.SQL" Version="10.26141.1" />
+    <PackageReference Include="Dapper" Version="2.1.79" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VisiLog.Data.Contracts\VisiLog.Data.Contracts.csproj" />
+    <ProjectReference Include="..\VisiLog.Model.App\VisiLog.Model.App.csproj" />
+    <ProjectReference Include="..\VisiLog.Model.Data.SQL\VisiLog.Model.Data.SQL.csproj" />
+  </ItemGroup>
+
+</Project>

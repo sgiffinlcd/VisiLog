@@ -1,0 +1,26 @@
+<Solution>
+  <Folder Name="/1-Global/">
+    <Project Path="VisiLog.Model.App/VisiLog.Model.App.csproj" />
+  </Folder>
+  <Folder Name="/2-UI/">
+    <Project Path="VisiLog.Web.Blazor.WASM/VisiLog.Web.Blazor.WASM.Client/VisiLog.Web.Blazor.WASM.Client.csproj" />
+    <Project Path="VisiLog.Web.Blazor.WASM/VisiLog.Web.Blazor.WASM/VisiLog.Web.Blazor.WASM.csproj" />
+  </Folder>
+  <Folder Name="/3-Abstraction/">
+    <Project Path="VisiLog.Abstraction.Contracts/VisiLog.Abstraction.Contracts.csproj" />
+    <Project Path="VisiLog.Abstraction.Service.WebAPI/VisiLog.Abstraction.Service.WebAPI.csproj" />
+  </Folder>
+  <Folder Name="/4-Service/">
+    <Project Path="VisiLog.Model.Service.WebAPI/VisiLog.Model.Service.WebAPI.csproj" />
+    <Project Path="VisiLog.Service.WebAPI/VisiLog.Service.WebAPI.csproj" />
+  </Folder>
+  <Folder Name="/5-Logic/">
+    <Project Path="VisiLog.Logic.Contracts/VisiLog.Logic.Contracts.csproj" />
+    <Project Path="VisiLog.Logic/VisiLog.Logic.csproj" />
+  </Folder>
+  <Folder Name="/6-Data/">
+    <Project Path="VisiLog.Data.Contracts/VisiLog.Data.Contracts.csproj" />
+    <Project Path="VisiLog.Data.SQL/VisiLog.Data.SQL.csproj" />
+    <Project Path="VisiLog.Model.Data.SQL/VisiLog.Model.Data.SQL.csproj" />
+  </Folder>
+</Solution>

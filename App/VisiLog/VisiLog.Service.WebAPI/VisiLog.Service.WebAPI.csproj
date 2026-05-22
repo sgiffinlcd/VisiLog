@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeFactory.NDF" Version="10.26141.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VisiLog.Logic.Contracts\VisiLog.Logic.Contracts.csproj" />
+    <ProjectReference Include="..\VisiLog.Model.App\VisiLog.Model.App.csproj" />
+    <ProjectReference Include="..\VisiLog.Model.Service.WebAPI\VisiLog.Model.Service.WebAPI.csproj" />
+  </ItemGroup>
+
+</Project>

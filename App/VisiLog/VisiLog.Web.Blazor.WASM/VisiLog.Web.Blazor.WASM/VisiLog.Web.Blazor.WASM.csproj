@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\VisiLog.Data.Contracts\VisiLog.Data.Contracts.csproj" />
+    <ProjectReference Include="..\..\VisiLog.Data.SQL\VisiLog.Data.SQL.csproj" />
+    <ProjectReference Include="..\..\VisiLog.Logic.Contracts\VisiLog.Logic.Contracts.csproj" />
+    <ProjectReference Include="..\..\VisiLog.Logic\VisiLog.Logic.csproj" />
+    <ProjectReference Include="..\..\VisiLog.Model.App\VisiLog.Model.App.csproj" />
+    <ProjectReference Include="..\..\VisiLog.Model.Data.SQL\VisiLog.Model.Data.SQL.csproj" />
+    <ProjectReference Include="..\..\VisiLog.Model.Service.WebAPI\VisiLog.Model.Service.WebAPI.csproj" />
+    <ProjectReference Include="..\..\VisiLog.Service.WebAPI\VisiLog.Service.WebAPI.csproj" />
+    <ProjectReference Include="..\VisiLog.Web.Blazor.WASM.Client\VisiLog.Web.Blazor.WASM.Client.csproj" />
+    <PackageReference Include="CodeFactory.NDF" Version="10.26141.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+  </ItemGroup>
+
+</Project>
