@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="9.4.0" />
     <ProjectReference Include="..\..\VisiLog.Data.Contracts\VisiLog.Data.Contracts.csproj" />
     <ProjectReference Include="..\..\VisiLog.Data.SQL\VisiLog.Data.SQL.csproj" />
     <ProjectReference Include="..\..\VisiLog.Logic.Contracts\VisiLog.Logic.Contracts.csproj" />

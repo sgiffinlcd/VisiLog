@@ -1,4 +1,5 @@
 ﻿using CodeFactory.NDF;
+using MudBlazor.Services;
 
 namespace VisiLog.Web.Blazor.WASM.Client
 {
@@ -29,7 +30,7 @@ namespace VisiLog.Web.Blazor.WASM.Client
         /// <param name="configuration">The source configuration to provide for dependency injection.</param>
         protected override void LoadManualRegistration(IServiceCollection serviceCollection, IConfiguration configuration)
         {
-            //Intentionally blank, this is for child libraries to override and load their own manual dependency injection.
+            serviceCollection.AddMudServices();
         }
 
         /// <summary>

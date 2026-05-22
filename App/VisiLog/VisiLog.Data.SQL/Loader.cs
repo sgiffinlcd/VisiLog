@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VisiLog.Data.Contracts.Repositories;
+using VisiLog.Data.SQL.Connections;
+using VisiLog.Data.SQL.Repositories;
 
 namespace VisiLog.Data.SQL
 {
@@ -31,7 +34,8 @@ namespace VisiLog.Data.SQL
         /// <param name="configuration">The source configuration to provide for dependency injection.</param>
         protected override void LoadManualRegistration(IServiceCollection serviceCollection, IConfiguration configuration)
         {
-            //Intentionally blank, this is for child libraries to override and load their own manual dependency injection.
+            serviceCollection.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
+            serviceCollection.AddScoped<ILogMessageRepository, LogMessageRepository>();
         }
 
         /// <summary>
