@@ -1,3 +1,5 @@
+using VisiLog.Model.Service.WebAPI;
+using VisiLog.Service.WebAPI;
 using VisiLog.Web.Blazor.WASM;
 using VisiLog.Web.Blazor.WASM.Client.Pages;
 using VisiLog.Web.Blazor.WASM.Components;
@@ -11,8 +13,13 @@ builder.Services.AddRazorComponents()
 // Using OpenAPI
 builder.Services.AddOpenApi();
 
+// Activate System.Text.Json source generation for the WebAPI's response DTOs.
+// Inserting at index 0 makes the source-gen context take precedence over the default reflection resolver.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, VisiLogJsonSerializerContext.Default));
+
 // Dependency injection loading for the library and any child libraries that are subscribed to by this library. This is for the trunk library to load dependency injection for itself and any child libraries that are subscribed to by this library. Leaf to trunk load order.
-var loader = new Loader();
+var loader = new VisiLog.Web.Blazor.WASM.Loader();
 loader.Load(builder.Services, builder.Configuration);
 
 var app = builder.Build();
@@ -35,6 +42,7 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapVisiLogEndpoints();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(VisiLog.Web.Blazor.WASM.Client._Imports).Assembly);

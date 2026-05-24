@@ -1,5 +1,6 @@
 ﻿using CodeFactory.NDF;
 using MudBlazor.Services;
+using System.Collections.Generic;
 using VisiLog.Model.App;
 
 namespace VisiLog.Web.Blazor.WASM
@@ -37,7 +38,7 @@ namespace VisiLog.Web.Blazor.WASM
         protected override void LoadManualRegistration(IServiceCollection serviceCollection, IConfiguration configuration)
         {
             serviceCollection.AddMudServices();
-            serviceCollection.Configure<LogSource>(configuration.GetSection(nameof(LogSource)));
+            serviceCollection.Configure<List<LogSource>>(configuration.GetSection("LogSources"));
         }
 
         /// <summary>

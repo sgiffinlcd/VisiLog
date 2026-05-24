@@ -1,0 +1,124 @@
+@page "/logsummary"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using VisiLog.Model.App
+
+<PageTitle>Log Summary</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+    <MudIcon Icon="@Icons.Material.Filled.ListAlt" Size="Size.Large" />
+    <MudText Typo="Typo.h3">Log Summary</MudText>
+</MudStack>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudSelect T="string"
+               Label="Log source"
+               Value="_selectedSource"
+               ValueChanged="OnSourceChangedAsync"
+               Variant="Variant.Outlined"
+               Dense="true"
+               Disabled="_loadingSources"
+               Style="max-width: 320px;">
+        @foreach (var source in _logSources)
+        {
+            <MudSelectItem Value="source">@source</MudSelectItem>
+        }
+    </MudSelect>
+    @foreach (var level in LevelFilterOrder)
+    {
+        var capturedLevel = level;
+        <MudCheckBox T="bool"
+                     Value="_selectedLevels.Contains(capturedLevel)"
+                     ValueChanged="@((bool v) => OnLevelFilterChanged(capturedLevel, v))"
+                     Dense="true"
+                     Color="Color.Primary">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@GetLevelIcon(capturedLevel)"
+                         Color="@GetLevelColor(capturedLevel)"
+                         Size="Size.Small" />
+                <span>@capturedLevel</span>
+            </MudStack>
+        </MudCheckBox>
+    }
+    @if (_loadingMessages)
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+    }
+</MudStack>
+
+@if (_errorMessage is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+}
+
+<MudDataGrid T="LogMessage"
+             Items="FilteredMessages"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Virtualize="true"
+             FixedHeader="true"
+             Height="600px"
+             Style="width: 100%;"
+             RowClick="OnRowClickAsync"
+             RowStyle="cursor: pointer;">
+    <Columns>
+        <PropertyColumn Property="x => x.Id" Title="Id" />
+        <PropertyColumn Property="x => x.TimeStamp" Title="TimeStamp" Format="yyyy-MM-dd HH:mm:ss.fff"
+                        HeaderStyle="width: 1px; white-space: nowrap;"
+                        CellStyle="width: 1px; white-space: nowrap;" />
+        <TemplateColumn Title="TraceId" SortBy="x => x.TraceId">
+            <CellTemplate>
+                @if (!string.IsNullOrEmpty(context.Item.TraceId))
+                {
+                    <MudTooltip Text="@context.Item.TraceId">
+                        <MudButton Variant="Variant.Text" Size="Size.Small" Class="pa-1">
+                            @GetTraceIdShort(context.Item.TraceId)
+                        </MudButton>
+                    </MudTooltip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Level" SortBy="x => x.Level">
+            <CellTemplate>
+                <MudTooltip Text="@(string.IsNullOrWhiteSpace(context.Item.Level) ? "Unknown" : context.Item.Level)">
+                    <MudIcon Icon="@GetLevelIcon(context.Item.Level)"
+                             Color="@GetLevelColor(context.Item.Level)"
+                             Size="Size.Small" />
+                </MudTooltip>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Message" SortBy="x => x.Message">
+            <CellTemplate>
+                @if (!string.IsNullOrEmpty(context.Item.Message))
+                {
+                    <MudTooltip Text="@context.Item.Message">
+                        <span style="white-space: nowrap;">@Truncate(context.Item.Message, 50)</span>
+                    </MudTooltip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Exception" SortBy="x => x.Exception">
+            <CellTemplate>
+                @if (!string.IsNullOrEmpty(context.Item.Exception))
+                {
+                    <MudTooltip Text="@context.Item.Exception">
+                        <span style="white-space: nowrap;">@Truncate(context.Item.Exception, 50)</span>
+                    </MudTooltip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Machine" Title="Machine" />
+        <TemplateColumn Title="Logger" SortBy="x => x.Logger">
+            <CellTemplate>
+                @if (!string.IsNullOrEmpty(context.Item.Logger))
+                {
+                    <MudTooltip Text="@context.Item.Logger">
+                        <span style="white-space: nowrap;">@Truncate(context.Item.Logger, 50)</span>
+                    </MudTooltip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.MemberName" Title="MemberName" />
+        <PropertyColumn Property="x => x.LineNumber" Title="LineNumber" />
+    </Columns>
+</MudDataGrid>

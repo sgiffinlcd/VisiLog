@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VisiLog.Abstraction.Contracts;
 
 namespace VisiLog.Abstraction.Service.WebAPI
 {
@@ -31,7 +32,8 @@ namespace VisiLog.Abstraction.Service.WebAPI
         /// <param name="configuration">The source configuration to provide for dependency injection.</param>
         protected override void LoadManualRegistration(IServiceCollection serviceCollection, IConfiguration configuration)
         {
-            //Intentionally blank, this is for child libraries to override and load their own manual dependency injection.
+            serviceCollection.AddScoped<ILogSourceClient, LogSourceClient>();
+            serviceCollection.AddScoped<ILogMessageClient, LogMessageClient>();
         }
 
         /// <summary>

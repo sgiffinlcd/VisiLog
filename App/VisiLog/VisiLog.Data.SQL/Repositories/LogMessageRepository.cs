@@ -6,7 +6,7 @@ using CodeFactory.NDF;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using VisiLog.Data.Contracts.Repositories;
-using VisiLog.Data.SQL.Connections;
+using VisiLog.Data.SQL.Sources;
 using VisiLog.Model.App;
 
 namespace VisiLog.Data.SQL.Repositories
@@ -16,29 +16,31 @@ namespace VisiLog.Data.SQL.Repositories
         private const string SelectColumns =
             "Id, Message, Level, TimeStamp, Exception, Environment, Machine, Thread, Logger, MemberName, LineNumber, TraceId";
 
-        private readonly IDbConnectionFactory _connectionFactory;
+        private readonly ILogSourceResolver _sourceResolver;
 
-        public LogMessageRepository(IDbConnectionFactory connectionFactory)
+        public LogMessageRepository(ILogSourceResolver sourceResolver)
         {
-            _connectionFactory = connectionFactory;
+            _sourceResolver = sourceResolver;
         }
 
         /// <summary>
-        /// Retrieves the most recent log messages from the database.
+        /// Retrieves the most recent log messages from the specified log source.
         /// </summary>
+        /// <param name="logSourceName">Name of the configured log source to query.</param>
         /// <param name="count">The maximum number of log messages to retrieve.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A read-only list of the most recent log messages ordered by timestamp in descending order.</returns>
-        public async Task<IReadOnlyList<LogMessage>> GetRecentAsync(int count, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<LogMessage>> GetRecentAsync(string logSourceName, int count, CancellationToken cancellationToken = default)
         {
 
             var result = new List<LogMessage>();
 
             try
             {
-                using var connection = _connectionFactory.Create();
+                var (connectionString, tableName) = _sourceResolver.Resolve(logSourceName);
+                using var connection = new SqlConnection(connectionString);
                 var command = new CommandDefinition(
-                    $"SELECT TOP (@count) {SelectColumns} FROM dbo.LogMessage ORDER BY TimeStamp DESC",
+                    $"SELECT TOP (@count) {SelectColumns} FROM {tableName} ORDER BY TimeStamp DESC",
                     new { count },
                     cancellationToken: cancellationToken);
                 var rows = await connection.QueryAsync<LogMessage>(command);
@@ -60,21 +62,23 @@ namespace VisiLog.Data.SQL.Repositories
         }
 
         /// <summary>
-        /// Retrieves a log message by its unique identifier.
+        /// Retrieves a log message by its unique identifier from the specified log source.
         /// </summary>
+        /// <param name="logSourceName">Name of the configured log source to query.</param>
         /// <param name="id">The unique identifier of the log message.</param>
         /// <param name="cancellationToken">The cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the log message if found;
         /// otherwise, null.</returns>
-        public async Task<LogMessage?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<LogMessage?> GetByIdAsync(string logSourceName, int id, CancellationToken cancellationToken = default)
         {
             LogMessage? result = null;
 
             try
             {
-                using var connection = _connectionFactory.Create();
+                var (connectionString, tableName) = _sourceResolver.Resolve(logSourceName);
+                using var connection = new SqlConnection(connectionString);
                 var command = new CommandDefinition(
-                    $"SELECT {SelectColumns} FROM dbo.LogMessage WHERE Id = @id",
+                    $"SELECT {SelectColumns} FROM {tableName} WHERE Id = @id",
                     new { id },
                     cancellationToken: cancellationToken);
                 result = await connection.QueryFirstOrDefaultAsync<LogMessage>(command);

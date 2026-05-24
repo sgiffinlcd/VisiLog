@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using VisiLog.Data.Contracts.Repositories;
-using VisiLog.Data.SQL.Connections;
+using VisiLog.Data.SQL.Sources;
 using VisiLog.Data.SQL.Repositories;
 
 namespace VisiLog.Data.SQL
@@ -34,7 +34,8 @@ namespace VisiLog.Data.SQL
         /// <param name="configuration">The source configuration to provide for dependency injection.</param>
         protected override void LoadManualRegistration(IServiceCollection serviceCollection, IConfiguration configuration)
         {
-            serviceCollection.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
+            serviceCollection.AddSingleton<ILogSourceResolver, LogSourceResolver>();
+            serviceCollection.AddSingleton<ILogSourceRepository, LogSourceRepository>();
             serviceCollection.AddScoped<ILogMessageRepository, LogMessageRepository>();
         }
 

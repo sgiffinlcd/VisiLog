@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="CodeFactory.NDF" Version="10.26141.1" />
   </ItemGroup>
 

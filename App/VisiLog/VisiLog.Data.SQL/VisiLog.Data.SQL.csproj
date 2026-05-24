@@ -10,6 +10,7 @@
     <PackageReference Include="CodeFactory.NDF" Version="10.26141.1" />
     <PackageReference Include="CodeFactory.NDF.SQL" Version="10.26141.1" />
     <PackageReference Include="Dapper" Version="2.1.79" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.8" />
   </ItemGroup>
 
   <ItemGroup>

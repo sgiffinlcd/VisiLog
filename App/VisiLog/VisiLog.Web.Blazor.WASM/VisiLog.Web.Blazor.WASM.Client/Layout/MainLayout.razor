@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager NavigationManager
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -13,11 +15,22 @@
                        OnClick="ToggleDrawer" />
         <MudText Typo="Typo.h5" Class="ml-3">VisiLog</MudText>
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" ClipMode="DrawerClipMode.Always">
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="DrawerVariant.Mini"
+               OpenMiniOnHover="false"
+               Elevation="1"
+               ClipMode="DrawerClipMode.Always">
+        <div style="display: flex; justify-content: flex-end; padding: 4px;">
+            <MudTooltip Text="@(_drawerOpen ? "Collapse menu" : "Expand menu")" Placement="Placement.Right">
+                <MudIconButton Icon="@(_drawerOpen ? Icons.Material.Filled.ChevronLeft : Icons.Material.Filled.ChevronRight)"
+                               Size="Size.Small"
+                               OnClick="ToggleDrawer" />
+            </MudTooltip>
+        </div>
         <NavMenu />
     </MudDrawer>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="my-4 pt-4">
+        <MudContainer MaxWidth="MaxWidth.False" Class="my-4 pt-4" Style="padding-left: 8px; padding-right: 8px;">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -30,7 +43,26 @@
 </div>
 
 @code {
-    private bool _drawerOpen = true;
+    private bool _drawerOpen = false;
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (_drawerOpen)
+        {
+            _drawerOpen = false;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
 }

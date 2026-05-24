@@ -1,6 +1,16 @@
-@* MudBlazor-based navigation. Add new MudNavLink entries here as routes are introduced. *@
+@* MudBlazor-based navigation. Each link is wrapped in a MudTooltip so the title surfaces on hover
+   when the drawer is in collapsed (icon-only) mini mode. Add new entries here as routes are introduced. *@
 <MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudNavLink Href="counter" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
-    <MudNavLink Href="weather" Icon="@Icons.Material.Filled.Cloud">Weather</MudNavLink>
+    <MudTooltip Text="Home" Placement="Placement.Right">
+        <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    </MudTooltip>
+    <MudTooltip Text="Counter" Placement="Placement.Right">
+        <MudNavLink Href="counter" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+    </MudTooltip>
+    <MudTooltip Text="Weather" Placement="Placement.Right">
+        <MudNavLink Href="weather" Icon="@Icons.Material.Filled.Cloud">Weather</MudNavLink>
+    </MudTooltip>
+    <MudTooltip Text="Log Summary" Placement="Placement.Right">
+        <MudNavLink Href="logsummary" Icon="@Icons.Material.Filled.ListAlt">Log Summary</MudNavLink>
+    </MudTooltip>
 </MudNavMenu>

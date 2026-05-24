@@ -1,0 +1,59 @@
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudText Typo="Typo.h6">Log Message Details</MudText>
+            <MudTooltip Text="Copy Message Details">
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                               Size="Size.Small"
+                               OnClick="CopyAllAsync" />
+            </MudTooltip>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudSimpleTable Dense="true" Hover="false" Bordered="false" Striped="true" Style="width: 100%;">
+            <tbody>
+                <tr><th style="width: 140px;">Id</th><td>@Message.Id</td></tr>
+                <tr><th>TimeStamp</th><td>@Message.TimeStamp?.ToString("yyyy-MM-dd HH:mm:ss.fff")</td></tr>
+                <tr><th>Level</th><td>@Message.Level</td></tr>
+                <tr><th>TraceId</th><td>@Message.TraceId</td></tr>
+                <tr><th>Machine</th><td>@Message.Machine</td></tr>
+                <tr><th>Environment</th><td>@Message.Environment</td></tr>
+                <tr><th>Thread</th><td>@Message.Thread</td></tr>
+                <tr><th>Logger</th><td>@Message.Logger</td></tr>
+                <tr><th>MemberName</th><td>@Message.MemberName</td></tr>
+                <tr><th>LineNumber</th><td>@Message.LineNumber</td></tr>
+                <tr>
+                    <th style="vertical-align: top;">Message</th>
+                    <td>
+                        <div style="display: flex; align-items: flex-start; gap: 8px;">
+                            <pre style="white-space: pre-wrap; margin: 0; font-family: inherit; flex: 1;">@Message.Message</pre>
+                            <MudTooltip Text="Copy message">
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                               Size="Size.Small"
+                                               OnClick="CopyMessageAsync"
+                                               Disabled="@string.IsNullOrEmpty(Message.Message)" />
+                            </MudTooltip>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="vertical-align: top;">Exception</th>
+                    <td>
+                        <div style="display: flex; align-items: flex-start; gap: 8px;">
+                            <pre style="white-space: pre-wrap; margin: 0; font-family: var(--mud-typography-default-family, monospace); font-size: 0.85em; flex: 1;">@Message.Exception</pre>
+                            <MudTooltip Text="Copy exception">
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
+                                               Size="Size.Small"
+                                               OnClick="CopyExceptionAsync"
+                                               Disabled="@string.IsNullOrEmpty(Message.Exception)" />
+                            </MudTooltip>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </MudSimpleTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary">Close</MudButton>
+    </DialogActions>
+</MudDialog>
