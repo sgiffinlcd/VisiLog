@@ -10,6 +10,7 @@ namespace VisiLog.Model.Service.WebAPI
     /// </summary>
     [JsonSerializable(typeof(LogMessageResponse))]
     [JsonSerializable(typeof(List<LogMessageResponse>))]
+    [JsonSerializable(typeof(LogMessagePageResponse))]
     [JsonSerializable(typeof(List<string>))]
     public partial class VisiLogJsonSerializerContext : JsonSerializerContext
     {

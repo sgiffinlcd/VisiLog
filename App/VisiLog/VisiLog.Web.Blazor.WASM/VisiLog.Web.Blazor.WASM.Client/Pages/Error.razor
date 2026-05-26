@@ -1,19 +1,18 @@
-@page "/Error"
+@page "/error"
 
 <PageTitle>Error</PageTitle>
 
-<MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">
-    An error occurred while processing your request.
-</MudAlert>
+<MudStack Spacing="3" Class="mt-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" Size="Size.Large" />
+        <MudText Typo="Typo.h3">Something went wrong</MudText>
+    </MudStack>
 
-<MudText Typo="Typo.h6" GutterBottom="true">Development Mode</MudText>
-<MudText Typo="Typo.body2" GutterBottom="true">
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</MudText>
-<MudText Typo="Typo.body2">
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the
-    <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</MudText>
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">
+        An unhandled error occurred while processing your request. Try the action again, or return to the home page.
+    </MudAlert>
+
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/">Return home</MudButton>
+    </MudStack>
+</MudStack>

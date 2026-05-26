@@ -17,7 +17,10 @@
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveWebAssembly" />
+    @* Disable prerendering so the server doesn't try to instantiate WASM-only pages whose
+       DI dependencies (HTTP clients in VisiLog.Abstraction.Service.WebAPI) are only
+       registered in the WASM container. *@
+    <Routes @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: false))" />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>

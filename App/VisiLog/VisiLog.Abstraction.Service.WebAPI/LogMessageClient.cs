@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using VisiLog.Abstraction.Contracts;
@@ -21,22 +22,46 @@ namespace VisiLog.Abstraction.Service.WebAPI
         }
 
         /// <summary>
-        /// Retrieves the most recent log messages from the specified log source via the WebAPI.
+        /// Retrieves a page of log messages from the specified log source via the WebAPI,
+        /// optionally filtered by level.
         /// </summary>
-        public async Task<IReadOnlyList<LogMessage>> GetRecentAsync(string logSourceName, int count, CancellationToken cancellationToken = default)
+        public async Task<LogMessagePage> GetPageAsync(
+            string logSourceName,
+            int offset,
+            int count,
+            IReadOnlyCollection<string>? levels,
+            string? traceId,
+            CancellationToken cancellationToken = default)
         {
             var escapedName = Uri.EscapeDataString(logSourceName);
-            var url = $"api/logsources/{escapedName}/messages?count={count}";
-            var responses = await _httpClient.GetFromJsonAsync(
-                url,
-                VisiLogJsonSerializerContext.Default.ListLogMessageResponse,
-                cancellationToken);
-            if (responses is null)
+            var url = new StringBuilder($"api/logsources/{escapedName}/messages?offset={offset}&count={count}");
+            if (levels is { Count: > 0 })
             {
-                return Array.Empty<LogMessage>();
+                foreach (var level in levels)
+                {
+                    url.Append("&levels=").Append(Uri.EscapeDataString(level));
+                }
+            }
+            if (!string.IsNullOrEmpty(traceId))
+            {
+                url.Append("&traceId=").Append(Uri.EscapeDataString(traceId));
             }
 
-            return responses.Select(ToDomain).ToList();
+            var response = await _httpClient.GetFromJsonAsync(
+                url.ToString(),
+                VisiLogJsonSerializerContext.Default.LogMessagePageResponse,
+                cancellationToken);
+
+            if (response is null)
+            {
+                return new LogMessagePage();
+            }
+
+            return new LogMessagePage
+            {
+                Items = response.Items.Select(ToDomain).ToList(),
+                TotalCount = response.TotalCount,
+            };
         }
 
         private static LogMessage ToDomain(LogMessageResponse response) => new()

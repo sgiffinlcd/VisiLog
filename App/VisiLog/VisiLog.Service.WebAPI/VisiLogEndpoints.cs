@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -17,6 +18,9 @@ namespace VisiLog.Service.WebAPI
     /// </summary>
     public static class VisiLogEndpoints
     {
+        private const int DefaultPageSize = 40;
+        private const int MaxPageSize = 500;
+
         /// <summary>
         /// Maps the VisiLog HTTP endpoints onto the supplied route builder.
         /// </summary>
@@ -35,16 +39,34 @@ namespace VisiLog.Service.WebAPI
 
             group.MapGet("/logsources/{name}/messages", async (
                 string name,
+                int? offset,
                 int? count,
+                string[]? levels,
+                string? traceId,
                 ILogMessageLogic logMessageLogic,
                 CancellationToken cancellationToken) =>
             {
-                var requestedCount = count is > 0 ? count.Value : 200;
-                var messages = await logMessageLogic.GetRecentAsync(name, requestedCount, cancellationToken);
-                var response = messages.Select(ToResponse).ToList();
+                var requestedOffset = offset is > 0 ? offset.Value : 0;
+                var requestedCount = count is > 0 ? Math.Min(count.Value, MaxPageSize) : DefaultPageSize;
+                var levelFilter = levels is { Length: > 0 } ? levels : null;
+                var traceIdFilter = string.IsNullOrEmpty(traceId) ? null : traceId;
+
+                var page = await logMessageLogic.GetPageAsync(
+                    name,
+                    requestedOffset,
+                    requestedCount,
+                    levelFilter,
+                    traceIdFilter,
+                    cancellationToken);
+
+                var response = new LogMessagePageResponse
+                {
+                    Items = page.Items.Select(ToResponse).ToList(),
+                    TotalCount = page.TotalCount,
+                };
                 return Results.Ok(response);
             })
-            .WithName("GetRecentLogMessages");
+            .WithName("GetLogMessagePage");
 
             return endpoints;
         }

@@ -11,13 +11,28 @@ namespace VisiLog.Data.Contracts.Repositories
     public interface ILogMessageRepository
     {
         /// <summary>
-        /// Retrieves the most recent log messages from the specified log source.
+        /// Retrieves a page of log messages from the specified log source, ordered newest to oldest.
         /// </summary>
         /// <param name="logSourceName">Name of the configured log source to query.</param>
-        /// <param name="count">The maximum number of log messages to retrieve.</param>
+        /// <param name="offset">Zero-based offset of the first record to return.</param>
+        /// <param name="count">Maximum number of log messages to return in this page.</param>
+        /// <param name="levels">
+        /// Optional filter — when non-null and non-empty, only messages whose <c>Level</c>
+        /// matches one of the supplied values are returned. <c>null</c> or empty disables the filter.
+        /// </param>
+        /// <param name="traceId">
+        /// Optional filter — when non-null and non-empty, only messages whose <c>TraceId</c>
+        /// equals the supplied value are returned. <c>null</c> or empty disables the filter.
+        /// </param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A read-only list of the most recent log messages ordered by timestamp in descending order.</returns>
-        Task<IReadOnlyList<LogMessage>> GetRecentAsync(string logSourceName, int count, CancellationToken cancellationToken = default);
+        /// <returns>The page of matching log messages plus the total count across all pages.</returns>
+        Task<LogMessagePage> GetPageAsync(
+            string logSourceName,
+            int offset,
+            int count,
+            IReadOnlyCollection<string>? levels,
+            string? traceId,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves a log message by its unique identifier from the specified log source.

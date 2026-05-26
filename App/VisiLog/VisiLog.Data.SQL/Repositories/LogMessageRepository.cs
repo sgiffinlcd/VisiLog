@@ -24,27 +24,72 @@ namespace VisiLog.Data.SQL.Repositories
         }
 
         /// <summary>
-        /// Retrieves the most recent log messages from the specified log source.
+        /// Retrieves a page of log messages from the specified log source, ordered newest to oldest.
         /// </summary>
         /// <param name="logSourceName">Name of the configured log source to query.</param>
-        /// <param name="count">The maximum number of log messages to retrieve.</param>
+        /// <param name="offset">Zero-based offset of the first record to return.</param>
+        /// <param name="count">Maximum number of log messages to return in this page.</param>
+        /// <param name="levels">
+        /// Optional filter — when non-null and non-empty, only messages whose <c>Level</c>
+        /// matches one of the supplied values are returned. <c>null</c> or empty disables the filter.
+        /// </param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A read-only list of the most recent log messages ordered by timestamp in descending order.</returns>
-        public async Task<IReadOnlyList<LogMessage>> GetRecentAsync(string logSourceName, int count, CancellationToken cancellationToken = default)
+        /// <returns>The page of matching log messages plus the total count across all pages.</returns>
+        public async Task<LogMessagePage> GetPageAsync(
+            string logSourceName,
+            int offset,
+            int count,
+            IReadOnlyCollection<string>? levels,
+            string? traceId,
+            CancellationToken cancellationToken = default)
         {
-
-            var result = new List<LogMessage>();
+            var result = new LogMessagePage();
 
             try
             {
                 var (connectionString, tableName) = _sourceResolver.Resolve(logSourceName);
                 using var connection = new SqlConnection(connectionString);
+
+                var clauses = new List<string>();
+                if (levels is { Count: > 0 })
+                {
+                    clauses.Add("Level IN @levels");
+                }
+                if (!string.IsNullOrEmpty(traceId))
+                {
+                    clauses.Add("TraceId = @traceId");
+                }
+                var whereClause = clauses.Count > 0
+                    ? " WHERE " + string.Join(" AND ", clauses)
+                    : string.Empty;
+
+                // No COUNT(*) — on a large logs table the filtered count is the
+                // dominant cost and we don't need it for virtualization. TotalCount
+                // is derived below from the page size to drive an infinite-scroll
+                // virtualization total.
+                var sql =
+                    $"SELECT {SelectColumns} FROM {tableName}{whereClause} " +
+                    "ORDER BY TimeStamp DESC " +
+                    "OFFSET @offset ROWS FETCH NEXT @count ROWS ONLY;";
+
                 var command = new CommandDefinition(
-                    $"SELECT TOP (@count) {SelectColumns} FROM {tableName} ORDER BY TimeStamp DESC",
-                    new { count },
+                    sql,
+                    new { offset, count, levels, traceId },
                     cancellationToken: cancellationToken);
-                var rows = await connection.QueryAsync<LogMessage>(command);
-                result =  rows.AsList();
+
+                var rows = (await connection.QueryAsync<LogMessage>(command)).AsList();
+
+                result.Items = rows;
+                result.TotalCount = rows.Count < count
+                    ? offset + rows.Count
+                    : offset + rows.Count + count * 5;
+            }
+            catch (TaskCanceledException)
+            {
+                // Dapper raises TaskCanceledException when the supplied CancellationToken
+                // fires (e.g. virtualized grid issued a newer fetch, client disconnected).
+                // Propagate as-is so callers can distinguish cancellation from a fault.
+                throw;
             }
             catch (SqlException ex)
             {
@@ -52,7 +97,7 @@ namespace VisiLog.Data.SQL.Repositories
                 ex.ThrowManagedException();
 
             }
-            catch (Exception)
+            catch (Exception unhandledException)
             {
                 // This catch is to handle any unexpected exceptions that may occur during the database operation.
                 throw new UnhandledException();
@@ -87,7 +132,7 @@ namespace VisiLog.Data.SQL.Repositories
             {
                 // Using the extension method to throw a more specific managed exception based on the SQL error.
                 ex.ThrowManagedException();
-                
+
             }
             catch (Exception)
             {
@@ -98,6 +143,6 @@ namespace VisiLog.Data.SQL.Repositories
             return result;
         }
 
-        
+
     }
 }

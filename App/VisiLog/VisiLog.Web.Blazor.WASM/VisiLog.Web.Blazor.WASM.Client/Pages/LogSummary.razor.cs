@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -11,7 +12,7 @@ namespace VisiLog.Web.Blazor.WASM.Client.Pages
 {
     public partial class LogSummary : ComponentBase
     {
-        private const int RecentMessageCount = 200;
+        private const int MinPageSize = 40;
 
         private static readonly Dictionary<string, (string Icon, Color Color)> LevelIconMap =
             new(StringComparer.OrdinalIgnoreCase)
@@ -46,40 +47,34 @@ namespace VisiLog.Web.Blazor.WASM.Client.Pages
             "Trace", "Debug", "Information", "Warning", "Error", "Critical",
         };
 
-        private static readonly HashSet<string> KnownLevels =
-            new(LevelFilterOrder, StringComparer.OrdinalIgnoreCase);
-
         private readonly HashSet<string> _selectedLevels =
             new(LevelFilterOrder, StringComparer.OrdinalIgnoreCase);
-
-        private IEnumerable<LogMessage> FilteredMessages =>
-            _messages.Where(m =>
-                string.IsNullOrEmpty(m.Level)
-                || !KnownLevels.Contains(m.Level)
-                || _selectedLevels.Contains(m.Level));
-
-        private void OnLevelFilterChanged(string level, bool selected)
-        {
-            if (selected)
-            {
-                _selectedLevels.Add(level);
-            }
-            else
-            {
-                _selectedLevels.Remove(level);
-            }
-        }
 
         [Inject] private ILogSourceClient LogSourceClient { get; set; } = default!;
         [Inject] private ILogMessageClient LogMessageClient { get; set; } = default!;
         [Inject] private IDialogService DialogService { get; set; } = default!;
 
+        private MudDataGrid<LogMessage>? _grid;
         private IReadOnlyList<string> _logSources = Array.Empty<string>();
-        private IReadOnlyList<LogMessage> _messages = Array.Empty<LogMessage>();
         private string? _selectedSource;
+        private string? _selectedTraceId;
         private bool _loadingSources;
-        private bool _loadingMessages;
         private string? _errorMessage;
+
+        // Set synchronously by trace-id button clicks so the grid's row-click handler
+        // (which fires after the button click via DOM bubbling) can skip opening the
+        // details dialog. Far more reliable than @onclick:stopPropagation, which
+        // MudButton swallows internally before it reaches a wrapping element.
+        private bool _suppressNextRowClick;
+
+        // Cached delegate: ensures the grid's Virtualize sees a stable reference across
+        // re-renders so it doesn't cancel and re-issue the data-provider call.
+        private readonly Func<GridStateVirtualize<LogMessage>, CancellationToken, Task<GridData<LogMessage>>> _serverReload;
+
+        public LogSummary()
+        {
+            _serverReload = ServerReloadAsync;
+        }
 
         protected override async Task OnInitializedAsync()
         {
@@ -88,10 +83,6 @@ namespace VisiLog.Web.Blazor.WASM.Client.Pages
             {
                 _logSources = await LogSourceClient.GetAllLogSourceNamesAsync();
                 _selectedSource = _logSources.FirstOrDefault();
-                if (_selectedSource is not null)
-                {
-                    await LoadMessagesAsync(_selectedSource);
-                }
             }
             catch (Exception ex)
             {
@@ -106,11 +97,63 @@ namespace VisiLog.Web.Blazor.WASM.Client.Pages
         private async Task OnSourceChangedAsync(string source)
         {
             _selectedSource = source;
-            await LoadMessagesAsync(source);
+            // Trace ids are source-specific; clear the trace filter when switching sources
+            // so the user isn't silently filtering on an id that doesn't exist in the new source.
+            _selectedTraceId = null;
+            await ReloadGridAsync();
         }
+
+        private async Task OnLevelFilterChangedAsync(string level, bool selected)
+        {
+            if (selected)
+            {
+                _selectedLevels.Add(level);
+            }
+            else
+            {
+                _selectedLevels.Remove(level);
+            }
+
+            await ReloadGridAsync();
+        }
+
+        private async Task OnTraceIdFilterSelectedAsync(string traceId)
+        {
+            // Set the suppression flag synchronously (before any await) so the row-click
+            // handler — which fires in the same dispatch cycle via DOM bubbling — sees it.
+            _suppressNextRowClick = true;
+
+            if (string.IsNullOrEmpty(traceId) || string.Equals(_selectedTraceId, traceId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _selectedTraceId = traceId;
+            await ReloadGridAsync();
+        }
+
+        private async Task ClearTraceIdFilterAsync()
+        {
+            if (_selectedTraceId is null)
+            {
+                return;
+            }
+
+            _selectedTraceId = null;
+            await ReloadGridAsync();
+        }
+
+        private Task ReloadGridAsync() =>
+            _grid is null ? Task.CompletedTask : _grid.ReloadServerData();
 
         private Task OnRowClickAsync(DataGridRowClickEventArgs<LogMessage> args)
         {
+            if (_suppressNextRowClick)
+            {
+                _suppressNextRowClick = false;
+                return Task.CompletedTask;
+            }
+
             var parameters = new DialogParameters<LogMessageDetailsDialog>
             {
                 { x => x.Message, args.Item },
@@ -125,22 +168,63 @@ namespace VisiLog.Web.Blazor.WASM.Client.Pages
             return DialogService.ShowAsync<LogMessageDetailsDialog>("Log Message Details", parameters, options);
         }
 
-        private async Task LoadMessagesAsync(string source)
+        private async Task<GridData<LogMessage>> ServerReloadAsync(
+            GridStateVirtualize<LogMessage> state,
+            CancellationToken cancellationToken)
         {
-            _loadingMessages = true;
-            _errorMessage = null;
+            if (string.IsNullOrEmpty(_selectedSource))
+            {
+                return new GridData<LogMessage>
+                {
+                    Items = Array.Empty<LogMessage>(),
+                    TotalItems = 0,
+                };
+            }
+
+            // Honor the "at least 40 records per fetch" expectation — first request seeds
+            // the latest 40 even when the visible viewport would ask for fewer.
+            var count = Math.Max(state.Count, MinPageSize);
+            var levels = _selectedLevels.ToList();
+
             try
             {
-                _messages = await LogMessageClient.GetRecentAsync(source, RecentMessageCount);
+                var page = await LogMessageClient.GetPageAsync(
+                    _selectedSource,
+                    state.StartIndex,
+                    count,
+                    levels,
+                    _selectedTraceId,
+                    cancellationToken);
+
+                _errorMessage = null;
+
+                return new GridData<LogMessage>
+                {
+                    Items = page.Items,
+                    TotalItems = page.TotalCount,
+                };
+            }
+            catch (TaskCanceledException)
+            {
+                // Terminal swallow point. Dapper throws TaskCanceledException when its
+                // CancellationToken fires; the repo, logic, endpoint and HTTP client all
+                // propagate it unchanged. Absorb it here so it never surfaces to MudBlazor,
+                // Blazor's logger, or the user. Causes: grid superseded this fetch with a
+                // newer one, page disposed, or HTTP connection aborted — all routine.
+                return new GridData<LogMessage>
+                {
+                    Items = Array.Empty<LogMessage>(),
+                    TotalItems = 0,
+                };
             }
             catch (Exception ex)
             {
-                _messages = Array.Empty<LogMessage>();
-                _errorMessage = $"Failed to load messages for '{source}': {ex.Message}";
-            }
-            finally
-            {
-                _loadingMessages = false;
+                _errorMessage = $"Failed to load messages for '{_selectedSource}': {ex.Message}";
+                return new GridData<LogMessage>
+                {
+                    Items = Array.Empty<LogMessage>(),
+                    TotalItems = 0,
+                };
             }
         }
     }

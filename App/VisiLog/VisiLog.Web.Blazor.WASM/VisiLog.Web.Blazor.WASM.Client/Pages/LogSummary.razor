@@ -1,5 +1,4 @@
-@page "/logsummary"
-@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@page "/"
 @using VisiLog.Model.App
 
 <PageTitle>Log Summary</PageTitle>
@@ -23,12 +22,23 @@
             <MudSelectItem Value="source">@source</MudSelectItem>
         }
     </MudSelect>
+    @if (!string.IsNullOrEmpty(_selectedTraceId))
+    {
+        <MudTooltip Text="@($"Filtering by TraceId {_selectedTraceId} — click to clear")">
+            <MudButton Variant="Variant.Text"
+                       Size="Size.Small"
+                       Class="pa-1"
+                       OnClick="ClearTraceIdFilterAsync">
+                @GetTraceIdShort(_selectedTraceId)
+            </MudButton>
+        </MudTooltip>
+    }
     @foreach (var level in LevelFilterOrder)
     {
         var capturedLevel = level;
         <MudCheckBox T="bool"
                      Value="_selectedLevels.Contains(capturedLevel)"
-                     ValueChanged="@((bool v) => OnLevelFilterChanged(capturedLevel, v))"
+                     ValueChanged="@((bool v) => OnLevelFilterChangedAsync(capturedLevel, v))"
                      Dense="true"
                      Color="Color.Primary">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
@@ -39,10 +49,6 @@
             </MudStack>
         </MudCheckBox>
     }
-    @if (_loadingMessages)
-    {
-        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-    }
 </MudStack>
 
 @if (_errorMessage is not null)
@@ -50,12 +56,24 @@
     <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
 }
 
-<MudDataGrid T="LogMessage"
-             Items="FilteredMessages"
+@if (_selectedSource is null)
+{
+    @if (!_loadingSources && _errorMessage is null)
+    {
+        <MudText Typo="Typo.body2">No log sources are configured.</MudText>
+    }
+}
+else
+{
+<MudDataGrid @ref="_grid"
+             T="LogMessage"
+             VirtualizeServerData="_serverReload"
+             Virtualize="true"
+             ItemSize="32"
+             OverscanCount="20"
              Dense="true"
              Hover="true"
              Bordered="true"
-             Virtualize="true"
              FixedHeader="true"
              Height="600px"
              Style="width: 100%;"
@@ -70,9 +88,13 @@
             <CellTemplate>
                 @if (!string.IsNullOrEmpty(context.Item.TraceId))
                 {
-                    <MudTooltip Text="@context.Item.TraceId">
-                        <MudButton Variant="Variant.Text" Size="Size.Small" Class="pa-1">
-                            @GetTraceIdShort(context.Item.TraceId)
+                    var rowTraceId = context.Item.TraceId;
+                    <MudTooltip Text="@($"Filter by TraceId {rowTraceId}")">
+                        <MudButton Variant="Variant.Text"
+                                   Size="Size.Small"
+                                   Class="pa-1"
+                                   OnClick="@(() => OnTraceIdFilterSelectedAsync(rowTraceId))">
+                            @GetTraceIdShort(rowTraceId)
                         </MudButton>
                     </MudTooltip>
                 }
@@ -122,3 +144,4 @@
         <PropertyColumn Property="x => x.LineNumber" Title="LineNumber" />
     </Columns>
 </MudDataGrid>
+}
